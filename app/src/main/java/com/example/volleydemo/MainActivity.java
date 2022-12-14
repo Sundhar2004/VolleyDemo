@@ -3,6 +3,7 @@ package com.example.volleydemo;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,10 +11,16 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.example.volleydemo.model.ImageDetails;
 
 import org.json.JSONArray;
@@ -25,7 +32,8 @@ import java.util.ArrayList;
 public class MainActivity extends AppCompatActivity {
 
     ListView listView;
-    ArrayList<ImageDetails> list = new ArrayList<ImageDetails>();
+    ArrayList<ImageDetails> arrayList = new ArrayList<>();
+    private Context context;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,6 +67,7 @@ public class MainActivity extends AppCompatActivity {
                         JSONArray jsonArray = new JSONArray(response);
                         //parseArray
                         parseArray(jsonArray);
+
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -68,9 +77,14 @@ public class MainActivity extends AppCompatActivity {
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-
+                Toast.makeText(context, error.toString(), Toast.LENGTH_SHORT).show();
             }
         });
+
+        //initialize requestQueue
+        RequestQueue requestQueue = Volley.newRequestQueue(this);
+        //add request
+        requestQueue.add(stringRequest);
     }
 
     private void parseArray(JSONArray jsonArray) {
@@ -84,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
                 ImageDetails imageDetails = new ImageDetails();
                 imageDetails.setName(jsonObject.getString("author"));
                 imageDetails.setImage(jsonObject.getString("download url"));  //download url is   { String url = "https://picsum.photos/v2/list" }
-                list.add(imageDetails);
+                arrayList.add(imageDetails);
 
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -94,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
             listView.setAdapter(new BaseAdapter() {
                 @Override
                 public int getCount() {
-                    return list.size();
+                    return arrayList.size();
                 }
 
                 @Override
@@ -111,12 +125,20 @@ public class MainActivity extends AppCompatActivity {
                 public View getView(int position, View convertView, ViewGroup parent) {
                     View view = getLayoutInflater().inflate(R.layout.item_main,null);
                     //intialize model class
-                    ImageDetails data = list.get(position);
+                    ImageDetails data = arrayList.get(position);
                     ImageView imageView = view.findViewById(R.id.image_view);
                     TextView name = view.findViewById(R.id.tv_text);
 
+                    //set image on imageview
+                    Glide.with(context)
+                            .load(data.getImage())
+                            .diskCacheStrategy(DiskCacheStrategy.ALL)
+                            .into(imageView);
+                    //set name on textview
+                    name.setText(data.getName());
 
-                    return null;
+
+                    return view;
                 }
             });
 
